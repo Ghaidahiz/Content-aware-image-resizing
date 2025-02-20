@@ -51,20 +51,25 @@ def array_to_grayimage(energyMap):
 
 
 height = 4
-width = 6
+width = 5
 minCost = 10**10
 opPath = []
-example = np.array([[1, 2, 3,8,0,6], [4, 5, 6,5,7,8],[5,7,4,4,8,0],[1,9,90,5,8,0]])
+global example
+example = np.array([[ 1 , 2 , 3 , 8 , 6],[ 4 , 5 , 6 , 5 , 8],[ 5 , 7  ,4 , 4 , 8],[ 1,  9 ,90  ,5  ,8]])
 
 def main():
      print(example)
-     findBestSeam()
+     #findBestSeam()
+     seams = int(input("Enter the the number of seams you want to remove please: "))
+     remove_seam(example, seams)
+     print("final array after seams deleting")
+
      #main execution down here:
      image_path = input("Enter the file path of the desired photo please: ")
      image = cv.imread(image_path)
      desired_width =input(f"Your width is {image.shape[1]}, please enter your desired width: ")
      energyMap = compute_energyMap(image)
-     array_to_grayimage(energyMap) # extra just to view the image , you will find the image as a file called EnargyMapImage.png
+    # array_to_grayimage(energyMap) # extra just to view the image , you will find the image as a file called EnargyMapImage.png
 
 
 def findBestSeam():
@@ -85,14 +90,24 @@ def findBestSeamRec(row,col,curCost,path):
 
      else: #if the path is still not done
           curCost = curCost + example[row,col] # add this pixel's cost to the current path cost
-          path.append((row, col)) # add this pixel to the path
+          path.append(col) # add this pixel to the path  
           # explore neighbors in the next row
           findBestSeamRec(row+1,col-1,curCost,path) 
           findBestSeamRec(row+1,col,curCost,path)
           findBestSeamRec(row+1,col+1,curCost,path)
           path.pop() #removes pixels when backtracing 
      
-     
-     
+
+def remove_seam(arr , seams ): #Take the numpy array and the number of iteration wanted to remove seams
+    for i in range(seams): #iterates through the wanted number of times
+        findBestSeam() # calling the method to calculate optimal path
+        new_example = np.array([np.delete(arr[i], opPath[i]) for i in range (arr.shape[0])]) #create a new numpy array that has to delete all 1D array (rows)  (its like deleting each element from a 1D array which is in a whole 2d Array)
+        print("after removing seams =", i+1) #hust for tracing the updates in each deletion
+        print(new_example) # same
+        arr = np.copy(new_example) #  to return the resulte array
+    example = np.copy(arr)   
+    return example
+
+
 if __name__ == "__main__":
     main()
