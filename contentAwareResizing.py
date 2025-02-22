@@ -1,7 +1,3 @@
-#pip install opencv-python
-#^write the above in the terminal to install cv package.
-
-#numpy should be installed by defult. if not, just write pip install numpy
 
 import cv2 as cv
 import numpy as np
@@ -72,7 +68,8 @@ def main():
      print(" ResizedImage.png Has been uploaded successfuly !")
 
 
-     
+     #End of Main ::::::::::::::::::::::::::
+
 
 
 def findBestSeam(grid):
@@ -107,7 +104,8 @@ def findBestSeamRec(grid,row,col,curCost,path):
           findBestSeamRec(grid,row+1,col,curCost,path)
           findBestSeamRec(grid,row+1,col+1,curCost,path)
           path.pop() #removes pixels when backtracing 
-     
+     #End of part 2 ::::::::::::::::::::::::::
+
 
 def remove_seam(image, energyArr, seams):
     new_image = np.copy(image)  #Keep a copy of the original image
@@ -140,6 +138,8 @@ def remove_seam(image, energyArr, seams):
         print(f"After removing seam {i+1}")
 
     return new_image
+
+#End of part 3 ::::::::::::::::::::::::::
 
 if __name__ == "__main__":
     main()
