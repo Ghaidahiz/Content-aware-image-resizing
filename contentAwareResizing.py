@@ -51,30 +51,28 @@ def array_to_grayimage(energyMap):
 #End of part 1 ::::::::::::::::::::::::::
 
 
-#height = 0
-#width = 0
 minCost = 10**10
 opPath = []
 counter=0
 
-#global example
-#example = np.array([[ 1 , 2 , 3 , 8 , 6],[ 4 , 5 , 6 , 5 , 8],[ 5 , 7  ,4 , 4 , 8],[ 1,  9 ,90  ,5  ,8]])
-
 def main():
-     #print(example)
-     #findBestSeam()
      image_path = input("Enter the file path of the desired photo please: ")
      image = cv.imread(image_path)
+
      #desired_width =input(f"Your width is {image.shape[1]}, please enter your desired width: ")
+
      energyMap = compute_energyMap(image)
+     array_to_grayimage(energyMap) # extra just to view the image , you will find the image as a file called EnargyMapImage.png
      print(energyMap)
+     print(" EnargyMapImage.png Has been uploaded successfuly !")
+
      seams = int(input("Enter the the number of seams you want to remove please: "))
-     resizedArr = remove_seam(energyMap, seams)
-     print("final array after seams deleting")
-     cv.imwrite('resizedImage.png',resizedArr)
+     resizedImg = remove_seam(image,energyMap, seams)
+     cv.imwrite('ResizedImage.png',resizedImg)
+     print(" ResizedImage.png Has been uploaded successfuly !")
+
 
      
-     array_to_grayimage(energyMap) # extra just to view the image , you will find the image as a file called EnargyMapImage.png
 
 
 def findBestSeam(grid):
@@ -85,10 +83,13 @@ def findBestSeam(grid):
      for i in range (width):
           findBestSeamRec(grid,0,i,0,[])
      print("~~~~~~~~~~~~~~~~~~~\nthe optimal path is:",opPath , "\nit's cost is: " , minCost)
+
+
 def findBestSeamRec(grid,row,col,curCost,path):
      global counter
      global minCost
      global opPath
+
      if col >= width or col  < 0: # if the path surpasses edges
           return # skip it
      if row >= height: # if a path is explored
@@ -102,24 +103,43 @@ def findBestSeamRec(grid,row,col,curCost,path):
           curCost = curCost + grid[row,col] # add this pixel's cost to the current path cost
           path.append(col) # add this pixel to the path  
           # explore neighbors in the next row
-          findBestSeamRec(grid,row+1,col-1,curCost,path) 
+          findBestSeamRec(grid,row+1,col-1,curCost,path)
           findBestSeamRec(grid,row+1,col,curCost,path)
           findBestSeamRec(grid,row+1,col+1,curCost,path)
           path.pop() #removes pixels when backtracing 
      
 
-def remove_seam(energyArr , seams ): #Take the numpy array and the number of iteration wanted to remove seams
-    newArr = np.copy(energyArr)
-    for i in range(seams): #iterates through the wanted number of times
-        findBestSeam(newArr) # calling the method to calculate optimal path
-        newArr = np.array([np.delete(energyArr[i], opPath[i]) for i in range (energyArr.shape[0])]) #create a new numpy array that has to delete all 1D array (rows)  (its like deleting each element from a 1D array which is in a whole 2d Array)
-        global width
-        width = width-1
-        compute_energyMap(newArr)
-        print("after removing seams =", i+1) #hust for tracing the updates in each deletion
-        #print(new_example) # same
-    return newArr
+def remove_seam(image, energyArr, seams):
+    new_image = np.copy(image)  #Keep a copy of the original image
+    newArr = np.copy(energyArr) #Keep a copy of the energy map 
 
+    global width
+
+    for i in range(seams):  #A loop for number of seams wanted to be deleted
+        findBestSeam(newArr)  # To calculate the best path after each delete
+       
+       #TO make a new map for the image after deleting a seam
+        map_x = np.zeros((new_image.shape[0], width - 1), dtype=np.float32)
+        map_y = np.zeros((new_image.shape[0], width - 1), dtype=np.float32)
+
+        for row in range(new_image.shape[0]):
+            col = opPath[row]  #the position of the pixel in the row
+            map_x[row, :col] = np.arange(col)
+            map_x[row, col:] = np.arange(col + 1, width)
+            map_y[row, :] = row  
+
+        #To remake the image without the deleted seam using the previus maps we made 
+        new_image = cv.remap(new_image, map_x, map_y, interpolation = cv.INTER_LINEAR)
+
+       
+        width -= 1  #To update the width after deleting a seam
+
+        # To recalculate the energyArr from the new image
+        newArr = compute_energyMap(new_image)
+
+        print(f"After removing seam {i+1}")
+
+    return new_image
 
 if __name__ == "__main__":
     main()
