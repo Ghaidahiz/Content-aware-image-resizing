@@ -81,7 +81,28 @@ def getCumulativeEnergyMap(energyMap):
 
 def findBestSeam(grid):
      #### calc From buttom row to top (backtrack)
-     print("~~~~~~~~~~~~~~~~~~~\nthe optimal path is:",opPath , "\nit's cost is: " , minCost)
+    height, width = grid.shape
+    opPath = [0] * height  # a new zero array to put the min pixel for each row  
+    opPath[height - 1] = np.argmin(grid[height - 1]) #from the bottom we will look for the min energy pixel in that row and save it in the col number in opPath
+
+    for row in range(height-2, -1,-1): #from bottom to top
+            prev_col = opPath[row + 1]  # The column index is taken from the row below
+            min_col = prev_col # Initialize the minimum as the pixel directly above
+
+            if prev_col > 0: # Ensure we are not at the first column
+                    if grid[row , prev_col-1] < grid[row , prev_col]: # compare the above left to the mid
+                        min_col = prev_col-1
+
+            if prev_col < width - 1:  # Ensure we're not at the last column
+                    if grid[row , prev_col+1] < grid[row , min_col]: #compare the previous winner as the minimum with the above right pixel
+                        min_col = prev_col+1
+
+            opPath[row] = min_col # assighn the min cost winner at each row 
+
+    return opPath
+
+
+    print("~~~~~~~~~~~~~~~~~~~\nthe optimal path is:",opPath , "\nit's cost is: " , minCost)
 
 #End of part 2 ::::::::::::::::::::::::::
 
@@ -89,6 +110,7 @@ def findBestSeam(grid):
 def remove_seam(image, energyArr, seams):
     new_image = np.copy(image)  #Keep a copy of the original image
     newArr = np.copy(energyArr) #Keep a copy of the energy map 
+    opPath = findBestSeam(newArr)
 
     global width
 
