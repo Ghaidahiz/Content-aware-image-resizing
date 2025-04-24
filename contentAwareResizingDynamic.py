@@ -39,22 +39,21 @@ def compute_energyMap(image):
 #End of part 1 ::::::::::::::::::::::::::
 
 
-minCost = 10**10
 opPath = []
-counter=0
 
 def main():
      image_path = input("Enter the file path of the desired photo please: ")
      image = cv.imread(image_path)
-
-     #desired_width =input(f"Your width is {image.shape[1]}, please enter your desired width: ")
-
-     energyMap = compute_energyMap(image)  
-     print(energyMap)
-     cumulativeEnergyMap = getCumulativeEnergyMap(energyMap)
-
      seams = int(input("Enter the the number of seams you want to remove please: "))
-     resizedImg = remove_seam(image,cumulativeEnergyMap, seams)
+     choice = int(input("Enter 0 if you want to remove one seam a time, and enter x number if you want to remove them in x batches:"))
+     if choice==0:
+         energyMap = compute_energyMap(image)  
+         cumulativeEnergyMap = getCumulativeEnergyMap(energyMap)
+         seams = int(input("Enter the the number of seams you want to remove please: "))
+         resizedImg = remove_seam(image,cumulativeEnergyMap, seams)
+     else:
+         resizedImg = remove_seams_in_batches(image, seams, choice)
+         
      cv.imwrite('ResizedImage.png',resizedImg)
      print(" ResizedImage.png Has been uploaded successfuly !")
 
@@ -63,20 +62,14 @@ def main():
 
 def getCumulativeEnergyMap(energyMap):
     height, width = energyMap.shape
-    cumulativeEnergyMap = np.zeros_like(energyMap, dtype=int) # create a table same size of energy map
+    cumulativeEnergyMap = np.copy(energyMap).astype(float) # why flout ? to allow infinite value
 
-    cumulativeEnergyMap[0] = energyMap[0]
-
-    for x in range(1, height):
-        for y in range(width):
-            
-            min_energy = cumulativeEnergyMap[x-1, y]
-            if y > 0:  #if not on the left side edge of the table
-                min_energy = min(min_energy, cumulativeEnergyMap[x-1, y-1])
-            if y < width - 1: #if not on the right side edge of the table
-                min_energy = min(min_energy, cumulativeEnergyMap[x-1, y+1])
-            cumulativeEnergyMap[x, y] = energyMap[x, y] + min_energy
-
+    for i in range(1, height):
+        for j in range(width):
+            left = cumulativeEnergyMap[i-1, j-1] if j > 0 else np.inf
+            up = cumulativeEnergyMap[i-1, j]
+            right = cumulativeEnergyMap[i-1, j+1] if j < width - 1 else np.inf
+            cumulativeEnergyMap[i, j] += min(left, up, right)
     return cumulativeEnergyMap
 
 def findBestSeam(grid):
@@ -102,10 +95,57 @@ def findBestSeam(grid):
     return opPath
 
 
-    print("~~~~~~~~~~~~~~~~~~~\nthe optimal path is:",opPath , "\nit's cost is: " , minCost)
+def find_k_seams(cumulativeEnergyMap, k):
+    height, width = cumulativeEnergyMap.shape
+    seams = []
+    for _ in range(k):
+        seam = [0] * height  
+        j = np.argmin(cumulativeEnergyMap[-1])
+        for i in reversed(range(height)):
+            seam[i] = j
+            if i == 0:
+                break           
+            neighbors = []
+            if j > 0 and cumulativeEnergyMap[i-1, j-1] != np.inf:
+                neighbors.append((j - 1, cumulativeEnergyMap[i-1, j-1]))
+            if cumulativeEnergyMap[i-1, j] != np.inf:
+                neighbors.append((j, cumulativeEnergyMap[i-1, j]))
+            if j < width - 1 and cumulativeEnergyMap[i-1, j + 1] != np.inf:
+                neighbors.append((j + 1, cumulativeEnergyMap[i-1, j + 1]))
+            if not neighbors:
+                break
+            j = min(neighbors, key=lambda x: x[1])[0]
+        seams.append(seam)
+        for i, j in enumerate(seam):
+            cumulativeEnergyMap[i, j] = np.inf
+    return seams
 
 #End of part 2 ::::::::::::::::::::::::::
 
+def remove_seams_in_batches(image, total_seams, batch_size=5):
+    for _ in range(0, total_seams, batch_size):
+        seams_to_remove = min(batch_size, total_seams)  # for last iteration
+        energyMap = compute_energyMap(image)
+        cumulativeEnergy = getCumulativeEnergyMap(energyMap)
+        seams = find_k_seams(cumulativeEnergy, seams_to_remove)
+        image = remove_seams(image, seams)
+        global width
+        width -= seams_to_remove
+        total_seams -= seams_to_remove
+        print(f"Removed {seams_to_remove} seams, remaining: {total_seams}")
+    return image
+
+def remove_seams(image, seams):
+    h, w, _ = image.shape
+    new_image = []
+    # For each row, remove the seam column(s)
+    for row in range(h):
+        cols_to_remove = sorted(seam[row] for seam in seams)
+        row_pixels = list(image[row])
+        for offset, col in enumerate(cols_to_remove):
+            row_pixels.pop(col - offset)  # Adjust for previous pops
+        new_image.append(row_pixels)
+    return np.array(new_image, dtype=image.dtype)
 
 def remove_seam(image, energyArr, seams):
     new_image = np.copy(image)  #Keep a copy of the original image

@@ -47,7 +47,7 @@ def array_to_grayimage(energyMap):
 #End of part 1 ::::::::::::::::::::::::::
 
 
-minCost = 10**10
+
 opPath = []
 counter=0
 
