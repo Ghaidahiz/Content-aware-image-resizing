@@ -77,9 +77,6 @@ def findBestSeam(grid):
     global opPath
     minCost = 10**10
     opPath = []
-    #  min = np.argmin(grid[0]) #minimum value's index in the first row to start the path
-    #  findBestSeamRec(grid,0,min,0,[])
-    #  print("~~~~~~~~~~~~~~~~~~~\nthe optimal path is:",opPath , "\nit's cost is: " , minCost)
     minidx = np.argmin(grid[0])
     minCost=grid[0,minidx]
     opPath.append(minidx)
