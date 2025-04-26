@@ -35,11 +35,18 @@ def compute_energyMap(image):
             else:
                 energyMap[x,y] = compute_energy(A=image[x-1][y-1],B=image[x-1][y],C=image[x-1][y+1],D=image[x][y-1],F=image[x][y+1],G=image[x+1][y-1],H=image[x+1][y],I=image[x+1][y+1])
     return energyMap
-
+def array_to_grayimage(energyMap):
+    print("Type of energyMap:", type(energyMap))
+    print("Shape of energyMap:", energyMap.shape)
+    print(energyMap)
+    energyMap = energyMap.astype(np.uint8)
+    cv.imwrite('EnargyMapImage.png',energyMap)
+    return
 #End of part 1 ::::::::::::::::::::::::::
 
 
 opPath = []
+seams =0
 
 def main():
      image_path = input("Enter the file path of the desired photo please: ")
@@ -47,9 +54,12 @@ def main():
      seams = int(input("Enter the the number of seams you want to remove please: "))
      choice = int(input("Enter 0 if you want to remove one seam a time, and enter x number if you want to remove them in x batches:"))
      if choice==0:
-         energyMap = compute_energyMap(image)  
+         energyMap = compute_energyMap(image)
+         array_to_grayimage(energyMap) # extra just to view the image , you will find the image as a file called EnargyMapImage.png
+         print(energyMap)
+         print(" EnargyMapImage.png Has been uploaded successfuly !")
+
          cumulativeEnergyMap = getCumulativeEnergyMap(energyMap)
-         seams = int(input("Enter the the number of seams you want to remove please: "))
          resizedImg = remove_seam(image,cumulativeEnergyMap, seams)
      else:
          resizedImg = remove_seams_in_batches(image, seams, choice)
@@ -126,6 +136,10 @@ def remove_seams_in_batches(image, total_seams, batch_size=5):
     for _ in range(0, total_seams, batch_size):
         seams_to_remove = min(batch_size, total_seams)  # for last iteration
         energyMap = compute_energyMap(image)
+        array_to_grayimage(energyMap) # extra just to view the image , you will find the image as a file called EnargyMapImage.png
+        print(energyMap)
+        print(" EnargyMapImage.png Has been uploaded successfuly !")
+
         cumulativeEnergy = getCumulativeEnergyMap(energyMap)
         seams = find_k_seams(cumulativeEnergy, seams_to_remove)
         image = remove_seams(image, seams)
@@ -155,7 +169,7 @@ def remove_seam(image, energyArr, seams):
     global width
 
     for i in range(seams):  #A loop for number of seams wanted to be deleted
-        findBestSeam(newArr)  # To calculate the best path after each delete
+        opPath = findBestSeam(newArr)  # To calculate the best path after each delete
        
        #TO make a new map for the image after deleting a seam
         map_x = np.zeros((new_image.shape[0], width - 1), dtype=np.float32)
